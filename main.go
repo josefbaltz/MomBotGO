@@ -64,12 +64,12 @@ func responder(session *discordgo.Session, event *discordgo.MessageCreate) {
 	if event.Author.Bot {
 		return
 	}
-	matchMom, err := regexp.MatchString(`\bmom\b|\bmum\b|\bmommy\b|\bmummy\b|\bmother\b/gim`, event.Content)
+	matchMom, err := regexp.MatchString(`(?im)\bmom\b|\bmum\b|\bmommy\b|\bmummy\b|\bmother\b`, event.Content)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	matchQuestion, err := regexp.MatchString(`[a-z ]\?\B|^\?+$/gim`, event.Content)
+	matchQuestion, err := regexp.MatchString(`(?im)\?\B|^\?$`, event.Content)
 	if err != nil {
 		fmt.Println(err)
 		return
