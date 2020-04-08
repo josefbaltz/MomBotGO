@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/signal"
 	"regexp"
-	"strconv"
 	"syscall"
 
 	"github.com/bwmarrin/discordgo"
@@ -75,8 +74,6 @@ func responder(session *discordgo.Session, event *discordgo.MessageCreate) {
 		fmt.Println(err)
 		return
 	}
-	fmt.Print(event.Content+" ")
-	fmt.Println("matchQuestion: " + strconv.FormatBool(matchQuestion) + " matchMom: " + strconv.FormatBool(matchMom))
 	if matchMom && matchQuestion {
 		sendResponse(session, event, "Mhm..")
 		return
