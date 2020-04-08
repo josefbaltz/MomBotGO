@@ -1,10 +1,13 @@
-package MomBotGO
+package main
 
 import (
 	"flag"
 	"fmt"
 	"os"
+	"os/signal"
 	"regexp"
+	"strconv"
+	"syscall"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -12,22 +15,37 @@ import (
 func init() {
 	flag.StringVar(&DiscordToken, "t", "", "Discord API Token")
 	flag.Parse()
+
+	if DiscordToken == "" {
+		flag.Usage()
+		os.Exit(1)
+	}
 }
 
 var DiscordToken string
 
 func main() {
-	if DiscordToken == "" {
-		fmt.Println("==MomBotGO Error==\nNo API Token Provided")
-		os.Exit(1)
-	}
 	mom, err := discordgo.New("Bot " + DiscordToken)
 	if err != nil {
 		fmt.Println("==MomBotGO Error==\n" + err.Error())
-		os.Exit(1)
+		return
 	}
 
 	mom.AddHandler(readyHandler)
+	mom.AddHandler(responder)
+
+	err = mom.Open()
+	if err != nil {
+		fmt.Println("==MomBotGO Error==\n" + err.Error())
+		return
+	}
+
+	fmt.Println("Bot is now running. Press CTRL-c to exit.")
+	sc := make (chan os.Signal, 1)
+	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
+	<-sc
+
+	mom.Close()
 }
 
 func readyHandler(session *discordgo.Session, event *discordgo.Ready) {
@@ -44,21 +62,30 @@ func sendResponse(session *discordgo.Session, event *discordgo.MessageCreate, me
 }
 
 func responder(session *discordgo.Session, event *discordgo.MessageCreate) {
-	matchMom, err := regexp.MatchString("`\b(mom|mum|mommy|mummy|mother)\b`gmi", event.Content)
+	if event.Author.Bot {
+		return
+	}
+	matchMom, err := regexp.MatchString(`\bmom\b|\bmum\b|\bmommy\b|\bmummy\b|\bmother\b/gim`, event.Content)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	matchQuestion, err := regexp.MatchString("`([a-z]\\?\\B|^\\?+$)`img", event.Content)
+	matchQuestion, err := regexp.MatchString(`[a-z ]\?\B|^\?+$/gim`, event.Content)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	if matchQuestion == true {
+	fmt.Print(event.Content+" ")
+	fmt.Println("matchQuestion: " + strconv.FormatBool(matchQuestion) + " matchMom: " + strconv.FormatBool(matchMom))
+	if matchMom && matchQuestion {
+		sendResponse(session, event, "Mhm..")
+		return
+	}
+	if matchQuestion {
 		sendResponse(session, event, "Ask your father")
 		return
 	}
-	if matchMom == true {
+	if matchMom {
 		sendResponse(session, event, "Not now sweetie")
 		return
 	}
